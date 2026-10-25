@@ -15,7 +15,7 @@ Work in `travel_partner/backend/` and `travel_partner/agents/`. Follow CLAUDE.md
 - Tools in `tools.py` (`update_preferences`, `ask_question`, `submit_itinerary`) only write a `TurnState`; the controller copies it into the session. Rejected itineraries return reasons to the model.
 - Six-question gate has three layers: `generation_hint()`, the `submit_itinerary` guard, and `AgentService.chat()`. Change all three together. Only the app sets `Preferences.skipped` / `answered`.
 - Itinerary versions are append-only; only the latest can be confirmed (older → 409 `stale_version`). The PDF renders the confirmed version.
-- Settings: `backend/src/config.py` (pydantic-settings, reads `personal-info/.env`).
+- Settings: `backend/src/config.py` (pydantic-settings, reads `personal-info/.env`). `--reload` doesn't watch that file, so restart uvicorn after a settings change. Sessions are in memory, so a restart ends open conversations.
 
 ## Rules
 - Validate every request with Pydantic; keep body-size, message-length, turns-per-session, rate limits and agent timeouts.

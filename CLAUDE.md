@@ -35,12 +35,13 @@ travel_partner/
 - **Frontend state:** `context/TripContext.jsx` holds `SessionState`. `hooks/useChat.js` and `hooks/useItinerary.js` hold the logic. `isItineraryTurn()` uses `ready_to_generate`, `awaiting_destination_choice` and the stage to decide when to show `FlightLoader`.
 - **Production CSP:** `vite.config.js` adds a strict CSP to production builds only. If the frontend needs a new font, image or API origin, update that policy too.
 - **Fit-to-screen layout:** `styles/index.css` imports tokens → base → components → layout, so `layout.css` overrides the others. Its `@media (min-width: 961px) and (min-height: 600px)` block makes the **landing page only** exactly one viewport tall: `ScrapbookLayout` adds `.page--fit` on `/`, and only `.site-main` scrolls, so the header and footer stay visible. New landing content must fit inside that block rather than add page height. The planner and review pages scroll normally, so their components stack and never overlap.
+- **Scroll behaviour:** the app uses `<BrowserRouter>`, which keeps the scroll position across routes, so `ScrapbookLayout` scrolls the window and `.site-main` to the top on every `pathname` change. `ChatLog` scrolls only its own `.chat-log` box. Don't use `scrollIntoView` there: it also scrolls the window. jsdom lacks `window.scrollTo`, so `frontend/tests/setup.js` stubs it.
 
 ## Rules
 ### Secrets and privacy
 - Real secrets live only in `personal-info/.env`. Commit only placeholder `.env.example` files.
-- `.gitignore` must cover `.env`, `.env.*` (except `.env.example`), and everything in `personal-info/` except `README.md` and `.gitkeep`.
-- Check `git status` and the tracked files before every commit. If a secret was ever committed, say that it must be rotated; deleting the file is not enough.
+- Both `.gitignore` files (repo root and `travel_partner/`) must cover `.env`, `.env.*` (except `.env.example`), and everything in `personal-info/` except `README.md` and `.gitkeep`. The root one also ignores `.claude/settings.local.json` and local `Issue*.png` screenshots.
+- Check `git status` and the tracked files before every commit, and scan staged content (`git grep --cached`) for the real key without printing it. Test files deliberately contain fake secrets (`sk-ant-secret-value-…`, `4111 1111…`); those are expected. If a secret was ever committed, say that it must be rotated; deleting the file is not enough.
 - The frontend never sees API keys. There are no secret `VITE_*` variables. All AI calls go through the backend.
 - Never put secrets into model prompts. Never log conversation bodies, tokens, or keys.
 - The agent must never ask for DOB, passport numbers or scans, SSN, card or bank details, passwords, or government IDs. Ask for passport *nationality* only when entry requirements depend on it.
@@ -81,11 +82,14 @@ npm run dev; npm test; npm run lint; npm run build; npm audit
 npx vitest run tests/utils.test.js           # one file; add -t "name" for one test
 ```
 - Backend tests never call the real model. `tests/conftest.py` passes a `FakeAgent` (which implements the `TravelAgent` Protocol) and test `Settings` into `create_app(settings, agent)`, and resets the `slowapi` limiter. Build new API tests on the `client` and `session` fixtures.
-- Settings come from `personal-info/.env` through `pydantic-settings` (`backend/src/config.py`). `backend/.env.example` lists the variables: `ANTHROPIC_API_KEY`, `MODEL`, `ALLOWED_ORIGINS`, `SESSION_TTL_MINUTES`.
-- `chat_bot/` is not a git repo yet; `travel_partner/.gitignore` is ready for when it becomes one.
+- Settings come from `personal-info/.env` through `pydantic-settings` (`backend/src/config.py`). `backend/.env.example` lists the variables: `ANTHROPIC_API_KEY`, `MODEL`, `ALLOWED_ORIGINS`, `SESSION_TTL_MINUTES`. `MODEL` defaults to `claude-sonnet-5-5`, but `personal-info/.env` may override it (for example with Haiku); check there before reporting which model the app uses.
+- `--reload` watches only `src` and `../agents`, so restart uvicorn after editing `personal-info/.env`. Sessions live in memory, so any backend restart ends open conversations; tell the user to start a new trip.
+- **Git:** the repo root is `chat_bot/`, pushed to `origin` = https://github.com/aishwaryaaroll/travel_partner_chat_bot (branch `main`). The commit author is set per repo to the GitHub noreply address; don't replace it with a personal email. `gh` is not installed.
 
 ## Subagents
 `.claude/agents/` defines `frontend-dev` (frontend), `backend-dev` (backend and `agents/`) and `test-runner`. `test-runner` runs every suite and edits only the `tests/` folders; when app code needs a fix, it reports the fix instead of making it. When you change a rule in this file, update the matching agent file too.
+
+These are Claude Code helpers for building the app. The app's own travel planner (`travel_partner/agents/travel_planner/`, run by the backend through `claude-agent-sdk`) is not a Claude Code subagent and never shows up in agent listings.
 
 ## Prerequisites
 Python ≥3.10 (3.14 installed), Git, **Node.js 22+ LTS** (v24 LTS installed), and an Anthropic API key from https://console.anthropic.com/.

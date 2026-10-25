@@ -14,6 +14,7 @@ Work only in `travel_partner/frontend/` unless the task explicitly says otherwis
 - `src/context/TripContext.jsx` holds `SessionState`; logic lives in `src/hooks/useChat.js` and `src/hooks/useItinerary.js`.
 - `src/services/api.js` is the **only** place that calls `fetch`. The session token travels in the `X-Session-Id` header and lives only in React state.
 - `src/styles/`: `tokens.css` → `base.css` → `components.css` → `layout.css` (import order matters; later files override). `layout.css` has a desktop "fit to screen" block (`min-width: 961px and min-height: 600px`) scoped to `.page--fit`, which `ScrapbookLayout` sets on the landing page only: that page is one viewport tall and only `.site-main` scrolls. Planner and review pages scroll normally — don't lock them to the viewport.
+- Scrolling: `ScrapbookLayout` scrolls to the top on every route change, because `BrowserRouter` doesn't. `ChatLog` scrolls only its own `.chat-log` box. Don't use `scrollIntoView` there, since it also scrolls the window. `tests/setup.js` stubs `window.scrollTo` for jsdom.
 - Visual reference: https://travel-scrap-book.vercel.app/
 
 ## Rules
