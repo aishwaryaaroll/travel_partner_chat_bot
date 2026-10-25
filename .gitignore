@@ -1,0 +1,21 @@
+# Secrets: never commit real values (travel_partner/.gitignore repeats these)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+travel_partner/personal-info/*
+!travel_partner/personal-info/README.md
+!travel_partner/personal-info/.gitkeep
+
+# Claude Code: per-machine settings stay local; shared agents in .claude/agents/ are committed
+.claude/settings.local.json
+
+# Local debugging screenshots
+Issue*.png
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
